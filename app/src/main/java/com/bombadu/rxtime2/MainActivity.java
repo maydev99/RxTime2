@@ -7,6 +7,7 @@ import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -15,6 +16,7 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
@@ -28,39 +30,29 @@ public class MainActivity extends AppCompatActivity {
 
         //final Task task = new Task("Walk the dog", false, 3);
 
-        List<Task> tasks = DataSource.createTasksList();
-        Observable<Task> taskObservable = Observable
-                .create(new ObservableOnSubscribe<Task>() {
+        Observable<Long> intervalObservable = Observable
+                .interval(1, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.io())
+                .takeWhile(new Predicate<Long>() {
                     @Override
-                    public void subscribe(@NonNull ObservableEmitter<Task> emitter) throws Exception {
-                        for (Task task: DataSource.createTasksList()) {
-                          if (!emitter.isDisposed()) {
-                              emitter.onNext(task);
-                          }
-                        }
-
-
-
-
-                        if (!emitter.isDisposed()) {
-                            emitter.onComplete();
-
-
-                        }
+                    public boolean test(@NonNull Long aLong) throws Exception {
+                        Log.d(TAG, "Test: " + aLong + ", thread: " + Thread.currentThread().getName());
+                        return aLong <= 5;
                     }
                 })
-                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
 
-        taskObservable.subscribe(new Observer<Task>() {
+        intervalObservable.subscribe(new Observer<Long>() {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
 
             }
 
             @Override
-            public void onNext(@NonNull Task task) {
-                Log.d(TAG, "onNext: " + task.getDescription());
+            public void onNext(@NonNull Long aLong) {
+                Log.d(TAG, "onNext: " +  aLong);
+
+
             }
 
             @Override
@@ -73,6 +65,8 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+
 
     }
 }
