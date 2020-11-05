@@ -50,4 +50,7 @@ dependencies {
 
     // RxJava Call Adapter
     implementation "com.squareup.retrofit2:adapter-rxjava2:2.5.0"
+
+    //Reactive Streams
+    implementation "android.arch.lifecycle:reactivestreams:1.1.1"
 }
