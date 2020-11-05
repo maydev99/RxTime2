@@ -1,23 +1,22 @@
 package com.bombadu.rxtime2;
 
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
+
+/*
+    From Callable is useful when calling objects from room database or sqlite
+ */
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,12 +28,19 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-        Observable<Task> taskObservable = Observable
-                .fromIterable(DataSource.createTasksList()) //from iterable
+// create Observable (method will not execute yet)
+        Observable<List<Task>> callable = Observable
+                .fromCallable(new Callable<List<Task>>() { //Callable
+                    @Override
+                    public List<Task> call() throws Exception {
+                        return MyDatabase.getTask();
+                    }
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
 
-        taskObservable.subscribe(new Observer<Task>() {
+// method will be executed since now something has subscribed
+        callable.subscribe(new Observer<Task>() {
             @Override
             public void onSubscribe(Disposable d) {
 
@@ -55,6 +61,5 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
     }
 }
