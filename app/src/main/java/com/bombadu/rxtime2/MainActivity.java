@@ -30,17 +30,14 @@ public class MainActivity extends AppCompatActivity {
 
         //final Task task = new Task("Walk the dog", false, 3);
 
+        //After 3 second logs value
+
         Observable<Long> intervalObservable = Observable
-                .interval(1, TimeUnit.SECONDS)
+                .timer(3, TimeUnit.SECONDS)
                 .subscribeOn(Schedulers.io())
-                .takeWhile(new Predicate<Long>() {
-                    @Override
-                    public boolean test(@NonNull Long aLong) throws Exception {
-                        Log.d(TAG, "Test: " + aLong + ", thread: " + Thread.currentThread().getName());
-                        return aLong <= 5;
-                    }
-                })
                 .observeOn(AndroidSchedulers.mainThread());
+
+
 
         intervalObservable.subscribe(new Observer<Long>() {
             @Override
