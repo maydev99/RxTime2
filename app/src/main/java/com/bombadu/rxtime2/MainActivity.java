@@ -28,35 +28,32 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //final Task task = new Task("Walk the dog", false, 3);
 
-        //After 3 second logs value
+        Task[] list = new Task[5];
+        list[0] = (new Task("Take out the trash", true, 3));
+        list[1] = (new Task("Walk the dog", false, 2));
+        list[2] = (new Task("Make my bed", true, 1));
+        list[3] = (new Task("Unload the dishwasher", false, 0));
+        list[4] = (new Task("Make dinner", true, 5));
 
-        Observable<Long> intervalObservable = Observable
-                .timer(3, TimeUnit.SECONDS)
+        Observable<Task> taskObservable = Observable
+                .fromArray(list)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
 
-
-
-        intervalObservable.subscribe(new Observer<Long>() {
-
-            long time = 0; // variable for demonstrating how much time has passed
-
+        taskObservable.subscribe(new Observer<Task>() {
             @Override
-            public void onSubscribe(@NonNull Disposable d) {
-                time = System.currentTimeMillis() / 1000;
-            }
-
-            @Override
-            public void onNext(@NonNull Long aLong) {
-                Log.d(TAG, "onNext: " + ((System.currentTimeMillis() / 1000) - time) + " seconds have elapsed." );
-
+            public void onSubscribe(Disposable d) {
 
             }
 
             @Override
-            public void onError(@NonNull Throwable e) {
+            public void onNext(Task task) {
+                Log.d(TAG, "onNext: : " + task.getDescription());
+            }
+
+            @Override
+            public void onError(Throwable e) {
 
             }
 
@@ -65,8 +62,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
-
 
     }
 }
