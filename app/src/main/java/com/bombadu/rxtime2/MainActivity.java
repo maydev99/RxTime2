@@ -29,15 +29,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-        Task[] list = new Task[5];
-        list[0] = (new Task("Take out the trash", true, 3));
-        list[1] = (new Task("Walk the dog", false, 2));
-        list[2] = (new Task("Make my bed", true, 1));
-        list[3] = (new Task("Unload the dishwasher", false, 0));
-        list[4] = (new Task("Make dinner", true, 5));
-
         Observable<Task> taskObservable = Observable
-                .fromArray(list)
+                .fromIterable(DataSource.createTasksList()) //from iterable
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
 
