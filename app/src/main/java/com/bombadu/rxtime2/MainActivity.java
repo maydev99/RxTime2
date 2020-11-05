@@ -40,14 +40,17 @@ public class MainActivity extends AppCompatActivity {
 
 
         intervalObservable.subscribe(new Observer<Long>() {
+
+            long time = 0; // variable for demonstrating how much time has passed
+
             @Override
             public void onSubscribe(@NonNull Disposable d) {
-
+                time = System.currentTimeMillis() / 1000;
             }
 
             @Override
             public void onNext(@NonNull Long aLong) {
-                Log.d(TAG, "onNext: " +  aLong);
+                Log.d(TAG, "onNext: " + ((System.currentTimeMillis() / 1000) - time) + " seconds have elapsed." );
 
 
             }
