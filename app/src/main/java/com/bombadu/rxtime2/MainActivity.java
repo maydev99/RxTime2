@@ -10,11 +10,13 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 /*
-    From Callable is useful when calling objects from room database or sqlite
+    To get uniques values from task list. So if there is a duplicate, in this case "Make Dinner" twice,
+    it will only output once.
  */
 
 public class MainActivity extends AppCompatActivity {
@@ -29,14 +31,11 @@ public class MainActivity extends AppCompatActivity {
 
         Observable<Task> taskObservable = Observable
                 .fromIterable(DataSource.createTasksList())
-                .filter(new Predicate<Task>() {
+                .distinct(new Function<Task, String>() {
+
                     @Override
-                    public boolean test(@NonNull Task task) throws Exception {
-                        Log.d(TAG, "test: " + Thread.currentThread().getName());
-                        if (task.getDescription().endsWith("Walk the dog")) {
-                            return true;
-                        }
-                        return false;
+                    public String apply(@NonNull Task task) throws Exception {
+                        return task.getDescription();
                     }
                 })
                 .subscribeOn(Schedulers.io())
@@ -51,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onNext(@NonNull Task task) {
                 Log.d(TAG, "onNext: " + task.getDescription());
+
             }
 
             @Override
@@ -63,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+
     }
 
 
