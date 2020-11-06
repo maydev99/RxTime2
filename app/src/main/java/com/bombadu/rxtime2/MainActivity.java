@@ -3,34 +3,41 @@ package com.bombadu.rxtime2;
 import android.os.Bundle;
 import android.util.Log;
 
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 
-import com.jakewharton.rxbinding3.view.RxView;
-
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
-import kotlin.Unit;
+import io.reactivex.schedulers.Schedulers;
 
 /*
-   Transformation Operators - Buffer2
-    Add Composite Disposables so you can dispose of these observable when the activity is closed
-    This example counts how many time a button is clicked in 4 seconds
+   Transformation Operators - Debounce
+    The Debounce operator filters out items emitted by the source Observable that are rapidly
+    followed by another emitted item. You can add a time delay to slow down the emittions.
 
-    RxBinding dependency added for this example
+    Good for execution a search after a time delay(instead of after every letter typed)
+    Helps limit server requests
+
+    Uses Whartons RxBinding library
  */
 
 public class MainActivity extends AppCompatActivity {
-
-    CompositeDisposable disposables = new CompositeDisposable();
-
     private static final String TAG = "MainActivity";
+
+    //ui
+    private SearchView searchView;
+
+    //vars
+    private CompositeDisposable disposables = new CompositeDisposable();
+    private long timeSinceLastRequest; //for printouts only. Not part of Logic.
 
 
     @Override
@@ -38,42 +45,65 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //detect clicks to a button
-        RxView.clicks(findViewById(R.id.button))
-                .map(new Function<Unit, Integer>() { //convert the detected clicks to an integer
+        searchView = findViewById(R.id.search_view);
+        timeSinceLastRequest = System.currentTimeMillis();
 
+        //Create Observable
+        Observable<String> observableQueryText = Observable
+                .create(new ObservableOnSubscribe<String>() {
                     @Override
-                    public Integer apply(@NonNull Unit unit) throws Exception {
-                        return 1;
+                    public void subscribe(@NonNull ObservableEmitter<String> emitter) throws Exception {
+                        //listen for test input in searchview
+                        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                            @Override
+                            public boolean onQueryTextSubmit(String query) {
+                                return false;
+                            }
+
+                            @Override
+                            public boolean onQueryTextChange(final String newText) {
+                                if (!emitter.isDisposed()) {
+                                    emitter.onNext(newText); //pass the query to the emitter
+                                }
+                                return false;
+                            }
+                        });
                     }
                 })
-                .buffer(4, TimeUnit.SECONDS)//capture all the clicks during a 4 second interval
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<Integer>>() {
-                    @Override
-                    public void onSubscribe(@NonNull Disposable d) {
-                        disposables.add(d); // add to disposables so you can clear onDestroy
-                    }
+                .debounce(500, TimeUnit.MILLISECONDS) //Apply Debounce() operator to limit requests
+                .subscribeOn(Schedulers.io());
 
-                    @Override
-                    public void onNext(@NonNull List<Integer> integers) {
-                        //produces a comma separated list. example{1, 1, 1, 1, 1, 1}
-                        Log.d(TAG, "onNext: You clicked " + integers.size() + " times in 4 seconds!");
-                    }
+        //Subscribe to and Observer
+        observableQueryText.subscribe(new Observer<String>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+                disposables.add(d);
+            }
 
-                    @Override
-                    public void onError(@NonNull Throwable e) {
+            @Override
+            public void onNext(@NonNull String s) {
+                Log.d(TAG, "onNext: time since last request: " + (System.currentTimeMillis() - timeSinceLastRequest));
+                Log.d(TAG, "onNext: search query: " + s);
+                timeSinceLastRequest = System.currentTimeMillis();
 
-                    }
+                //method sending request to server
+                sendRequestToServer(s);
+            }
 
-                    @Override
-                    public void onComplete() {
+            @Override
+            public void onError(@NonNull Throwable e) {
 
-                    }
-                });
+            }
 
+            @Override
+            public void onComplete() {
 
-
+            }
+        });
+    }
+    //Fake method for sending request to server
+    private void sendRequestToServer(String query) {
+        //do nothing
     }
 
     @Override
