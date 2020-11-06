@@ -4,11 +4,14 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProviders;
 
-import java.io.IOException;
-
-import okhttp3.ResponseBody;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Predicate;
+import io.reactivex.schedulers.Schedulers;
 
 /*
     From Callable is useful when calling objects from room database or sqlite
@@ -24,20 +27,43 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        MainViewModel viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        Observable<Task> taskObservable = Observable
+                .fromIterable(DataSource.createTasksList())
+                .filter(new Predicate<Task>() {
+                    @Override
+                    public boolean test(@NonNull Task task) throws Exception {
+                        Log.d(TAG, "test: " + Thread.currentThread().getName());
+                        if (task.getDescription().endsWith("Walk the dog")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
 
-        viewModel.makeQuery().observe(this, new androidx.lifecycle.Observer<ResponseBody>() {
+        taskObservable.subscribe(new Observer<Task>() {
             @Override
-            public void onChanged(ResponseBody responseBody) {
-                Log.d(TAG, "onChanged: this is a live data response!");
+            public void onSubscribe(@NonNull Disposable d) {
 
-                try {
-                    Log.d(TAG, "onChanged: " + responseBody.string());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            }
+
+            @Override
+            public void onNext(@NonNull Task task) {
+                Log.d(TAG, "onNext: " + task.getDescription());
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
             }
         });
-
     }
+
+
 }
