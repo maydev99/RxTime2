@@ -15,8 +15,9 @@ import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 /*
-    To get uniques values from task list. So if there is a duplicate, in this case "Make Dinner" twice,
-    it will only output once.
+    Take - Outputs only 3 of the items in Task
+    TakeWhile - like a while loop, outputs items until a condition is met
+        in this case returns only the first item because the second item is false
  */
 
 public class MainActivity extends AppCompatActivity {
@@ -29,17 +30,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Observable<Task> taskObservable = Observable
+        Observable<Task> taskObservable = Observable //**TakeWhile
                 .fromIterable(DataSource.createTasksList())
-                .distinct(new Function<Task, String>() {
-
+                .takeWhile(new Predicate<Task>() {
                     @Override
-                    public String apply(@NonNull Task task) throws Exception {
-                        return task.getDescription();
+                    public boolean test(@NonNull Task task) throws Exception {
+                        return task.isComplete();
                     }
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
+
+        /*Observable<Task> taskObservable = Observable   **Take
+                .fromIterable(DataSource.createTasksList())
+                .take(3) //Three
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());*/
 
         taskObservable.subscribe(new Observer<Task>() {
             @Override
