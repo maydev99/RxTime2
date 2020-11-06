@@ -5,19 +5,21 @@ import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.List;
+
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 /*
-   Transformation Operators - Map
-   Convert Task to String List - outputs only the descriptions
+   Transformation Operators - Buffer
+   Useful for collecting object and emitting as a group
 
-   This can be done with boolean or longs as well
+   This example emits the list in groups of 2
+
  */
 
 public class MainActivity extends AppCompatActivity {
@@ -30,26 +32,26 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Observable
+        //Create an Observable
+        Observable<Task> taskObservable = Observable
                 .fromIterable(DataSource.createTasksList())
-                .map(new Function<Task, String>() { //you can also create the function below and pass it to Map)
-                    @Override
-                    public String apply(@NonNull Task task) throws Exception {
-                        return task.getDescription();
-                    }
-                })
-                .subscribeOn(Schedulers.io())
+                .subscribeOn(Schedulers.io());
+
+        taskObservable
+                .buffer(2)// Apply Buffer() operator
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<List<Task>>() {
                     @Override
                     public void onSubscribe(@NonNull Disposable d) {
 
                     }
 
                     @Override
-                    public void onNext(@NonNull String string) {
-                        Log.d(TAG, "onNext: " + string);
-
+                    public void onNext(@NonNull List<Task> tasks) {
+                        Log.d(TAG, "onNext: bundle results: ---------------");
+                        for (Task task: tasks) {
+                            Log.d(TAG, "onNext: " + task.getDescription());
+                        }
                     }
 
                     @Override
@@ -63,17 +65,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-
     }
-
-    /*Function<Task, String> extractDescriptionFunction = new Function<Task, String>() {
-        @Override
-        public String apply(@NonNull Task task) throws Exception {
-            Log.d(TAG, "apply: doing work on a thread: " + Thread.currentThread().getName());
-            return task.getDescription();
-
-        }
-    };*/
 
 
 }
