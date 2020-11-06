@@ -21,15 +21,17 @@ import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 /*
-   Transformation Operators - FlatMap
+   Transformation Operators - ConcatMap
+   This is very similar to FlatMap but maintains order but loses speed
+
     Transform the item(s) emitted by an Observable into Observables,
     then flatten the emissions from those into a single Observable.
     If you're familiar with LiveData, MediatorLiveData can do something very similar.
 
-    Probably use other operator in conjunction with flat map
-    Does not emit the objects in the same order (Randomly)
+    Probably uses other operators in conjunction with concatMap
 
-    Added Dependencies:
+
+    Uses Dependencies:
     RxCallAdapter
     RecyclerView
 
@@ -58,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
         getPostsObservable()
                 .subscribeOn(Schedulers.io())
-                .flatMap(new Function<Post, ObservableSource<Post>>() {
+                .concatMap(new Function<Post, ObservableSource<Post>>() { //changed to concat map
                     @Override
                     public ObservableSource<Post> apply(Post post) throws Exception {
                         return getCommentsObservable(post);
