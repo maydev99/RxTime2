@@ -5,24 +5,30 @@ import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.List;
+import com.jakewharton.rxbinding3.view.RxView;
 
-import io.reactivex.Observable;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.functions.Function;
+import kotlin.Unit;
 
 /*
-   Transformation Operators - Buffer
-   Useful for collecting object and emitting as a group
+   Transformation Operators - Buffer2
+    Add Composite Disposables so you can dispose of these observable when the activity is closed
+    This example counts how many time a button is clicked in 4 seconds
 
-   This example emits the list in groups of 2
-
+    RxBinding dependency added for this example
  */
 
 public class MainActivity extends AppCompatActivity {
+
+    CompositeDisposable disposables = new CompositeDisposable();
 
     private static final String TAG = "MainActivity";
 
@@ -32,26 +38,27 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Create an Observable
-        Observable<Task> taskObservable = Observable
-                .fromIterable(DataSource.createTasksList())
-                .subscribeOn(Schedulers.io());
+        //detect clicks to a button
+        RxView.clicks(findViewById(R.id.button))
+                .map(new Function<Unit, Integer>() { //convert the detected clicks to an integer
 
-        taskObservable
-                .buffer(2)// Apply Buffer() operator
+                    @Override
+                    public Integer apply(@NonNull Unit unit) throws Exception {
+                        return 1;
+                    }
+                })
+                .buffer(4, TimeUnit.SECONDS)//capture all the clicks during a 4 second interval
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<Task>>() {
+                .subscribe(new Observer<List<Integer>>() {
                     @Override
                     public void onSubscribe(@NonNull Disposable d) {
-
+                        disposables.add(d); // add to disposables so you can clear onDestroy
                     }
 
                     @Override
-                    public void onNext(@NonNull List<Task> tasks) {
-                        Log.d(TAG, "onNext: bundle results: ---------------");
-                        for (Task task: tasks) {
-                            Log.d(TAG, "onNext: " + task.getDescription());
-                        }
+                    public void onNext(@NonNull List<Integer> integers) {
+                        //produces a comma separated list. example{1, 1, 1, 1, 1, 1}
+                        Log.d(TAG, "onNext: You clicked " + integers.size() + " times in 4 seconds!");
                     }
 
                     @Override
@@ -65,7 +72,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
+
+
     }
 
-
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        disposables.clear();
+    }
 }
